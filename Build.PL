@@ -1,6 +1,5 @@
 use strict;
 use warnings;
-use Module::Build;
 use FindBin qw($Bin);
 use lib "$Bin/build_lib";
 use Module::Build::FilterTests;

@@ -3,6 +3,7 @@ Changes
 MANIFEST
 README
 lib/Gpx/Addons/Filter.pm
+build_lib/Module/Build/FilterTests.pm
 t/000-load.t
 t/030-timeframe.t
 t/050-filter_trk.t

@@ -1,6 +1,6 @@
 ---
 name: Gpx-Addons-Filter
-version: 0.01
+version: 0.02
 author:
   - "Ingo LANTSCHNER <perl [at] lantschner.name>"
 abstract: filter Geo::Gpx-data based on time-boundaries
@@ -23,6 +23,6 @@ meta-spec:
 provides:
   Gpx::Addons::Filter:
     file: lib/Gpx/Addons/Filter.pm
-    version: 0.01
+    version: 0.02
 resources:
   license: http://dev.perl.org/licenses/
