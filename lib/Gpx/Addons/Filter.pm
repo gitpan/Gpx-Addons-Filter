@@ -16,11 +16,11 @@ Gpx::Addons::Filter - filter Geo::Gpx-data based on time-boundaries
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =pod
 
@@ -44,9 +44,10 @@ with timestamps in a given time-period.
 
 To include waypoints into the export an additional function B<filter_wp> is provided.
 
-    my $bounds = $new_gpx->bounds();        # calculate the boundin-box of the selected tracks
-    my $sel_wp = filter_wp($wp, $bounds);   # export all waypoints within this box
-    $new_gpx->waypoints( $sel_wp );         # add these wayponts to the gpx-object
+    my $bounds = $new_gpx->bounds();            # calculate the boundin-box of the selected tracks
+    my $all_wp = $gpx->waypoins();              # export all waypoints from the original GPX-file
+    my $sel_wp = filter_wp($all_wp, $bounds);   # select all waypoints within this box
+    $new_gpx->waypoints( $sel_wp );             # add these wayponts to the new gpx-object
 
 =head1 EXPORT
 
@@ -133,7 +134,6 @@ checking, if track-points in the middle of the segment are larger or small than 
 	if (not defined $ref) {
 	   croak("At least the reference to some data must be passed to this function!\n")
 	}
-
 	
 	my @tracks;
 	foreach my $trk (@{$ref}) {
@@ -145,9 +145,9 @@ checking, if track-points in the middle of the segment are larger or small than 
 			print {*STDERR} "Dump of \$seg:\n" . Dumper($seg) . "\n" if $DEBUG > 1;
 			my $first_point = $seg->{points}->[0]->{time};
 			my $last_point = $seg->{points}->[$#{$seg->{points}}]->{time}; 
-			### frame start-time:         $start
+			##### frame start-time:         $start
 			##### first point in segment:   $first_point
-			### frame end-time:           $end
+			##### frame end-time:           $end
 			##### last  point in segment:   $last_point
 			
 			# Some checks for plausibility
@@ -162,7 +162,7 @@ checking, if track-points in the middle of the segment are larger or small than 
                 
                 # Plausibilitychecks
             	unless ( $start =~ /\d+/ and $end =~ /\d+/ ) {
-            	   croak("**************** Start- and end-time must be unix-epoche-seconds!\n")
+            	   croak("Start- and end-time must be unix-epoche-seconds!\n")
             	}
                 if ($start > $end) {
             	   croak("hmh - you passed an end-time greater than the start-time - this can not work\n")
@@ -221,7 +221,7 @@ sub filter_wp {
 
 =head2 filter_wp
 
-This function takes 2 arguments:
+This function takes 3 arguments:
 
 =over
 
@@ -232,6 +232,10 @@ Reference to a data-structure (waypoints) from Geo::Gpx
 =item 2
 
 Reference to a bounding-box as created by Geo::Gpx
+
+=item 3
+
+Tolerance (number) for inclusion of nearby-waypoints (see function within_bounds)
 
 =back
 
@@ -245,9 +249,13 @@ See the examples in SYNOPSIS.
 	use Data::Dumper;
 	my $ref = shift;   # ref to a Geo::Gpx-exported track-structure
 	my $box = shift;   # ref to bounding-box
+	my $tolerance = shift;
+	if (not defined $tolerance) {
+	   $tolerance = 0;
+	}
 	my @filtered;
 	foreach my $wp (@{$ref}) {
-		if ( within_bounds($wp, $box) ) {
+		if ( within_bounds($wp, $box, $tolerance) ) {
 			push @filtered, $wp;
 		}
 	}
@@ -262,14 +270,44 @@ sub within_bounds {
 This is a helper-function for filter_wp. 
 It returns 1 if a waypoint is on or within the bounds, undef if outside 
 
+=head3 Expected  Parameters
+
+=over 
+
+=item waypoint
+
+Pointer to the waypoint-hash.
+
+mandatory
+
+=item box
+
+Pointer to the bounding-box-hash
+
+mandatory
+
+=item tolerance
+
+Tolerance of waypoints (expands the box slightly so that points near the birder still get included ). 
+
+optional, number
+
+=back
+
 =cut
 
 	my $wp = shift;
 	my $box = shift;
-	if ( $wp->{lat} <= $box->{maxlat} ) {
-		if ( $wp->{lat} >= $box->{minlat}) {
-			if ($wp->{lon} <= $box->{maxlon}) {
-				if ($wp->{lon} >= $box->{minlon}) {
+	if (not defined $wp or not defined $box) {
+	   croak "Both waypoint and box mus be defined!"
+	}
+	my $tolerance = shift;      
+	#### Waypoint: $wp
+	#### Bounding-box: $box
+	if ( $wp->{lat} <= $box->{maxlat} + $tolerance ) {
+		if ( $wp->{lat} >= $box->{minlat} - $tolerance ) {
+			if ($wp->{lon} <= $box->{maxlon} + $tolerance ) {
+				if ($wp->{lon} >= $box->{minlon} - $tolerance ) {
 					return 1;
 				}
 			}
@@ -294,26 +332,29 @@ TODO: Evaluate TZ-Problem
 
 	use Time::Local;
 	my $date_strg = shift;
-    if ( $date_strg =~ m{
+    if ( $date_strg =~ m{   ^           # nothing in front
                             (\d{4})     # year
                             -           # seperated by a dash
                             (\d{1,2})   # month (may have only one number)
                             -           # seperated by a dash
                             (\d{1,2})   # day (may be one number)
+                            $           # nothing after
                         }x
         ){
 		my $day = $3;
-		my $month = $2-1;
+		my $month = $2-1;   # see documentation of Time::Local for the reason for these calculations
 
 		# Plausibility-Checks
-		if ($day < 1 or $day > 31 or $month < 1 or $month > 12) {
-			print {*STDERR} "Format for date not valid, valid format is yyyy-mm-dd\n";
-			return;
+		if ( ($day < 1) or ($day > 31) or (($month + 1) < 1) or ($month + 1 > 12) ) {
+			croak 'Did you swap day with month? Valid format is yyyy-mm-dd. Stopped' ;
 		}
-		my $year = $1-1900;
-		if ($year < 32) {
-			print {*STDERR} "Years below 32 not allowed (Jesus was not guided by GPS)\n";
-			return undef;
+		my $year = $1;
+		### $year: $year
+		$year = $year-1900;
+		### $year - 1900 (prepared for Time::Local::timegm): $year
+		
+		if ( (($year + 1900) < 32) or (($year + 1900) > 2037) ) {
+			croak 'Years before 32 (Jesus wasn\'t guided by GPS) and after 2037 are not supported. Stopped';
 		}
 		
 		# Calculations (epoche-seconds of 0h and 23:59:59h GMT)
@@ -321,8 +362,7 @@ TODO: Evaluate TZ-Problem
 		my $day_24h = timegm(59,59,23,$day,$month,$year);
 		return ($day_0h, $day_24h);
 	} else {
-		print {*STDERR} "Format of date_strg must be yyyy-mm-dd!\n";
-		return;
+		croak 'Format of date must be yyyy-mm-dd! Stopped';
 	}
 }
 

@@ -8,6 +8,7 @@ t/000-load.t
 t/030-timeframe.t
 t/050-filter_trk.t
 t/060-filter_wp.t
+t/061-outside_wpt.t
 t/boilerplate.t
 t/developer/pod-coverage.t
 t/developer/pod.t

@@ -18,6 +18,7 @@ my $builder = Module::Build::FilterTests->new(
     build_requires => {
         'Test::More'                => 0,
         'Test::Output'              => 0,
+        'Sub::Identify'             => 0,
         
     },
 

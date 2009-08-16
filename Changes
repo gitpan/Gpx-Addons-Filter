@@ -6,3 +6,6 @@ Revision history for Gpx-Addons-Filter
 0.02    2009-08-14
         copied missing build_lib/ 
 
+0.03    2009-08-14 
+        Better filtering of wrong date-formats in first_and_last_second_of
+        Waypoints slighty outside of the box can now be included (tolerance, 061-outside_wpt.t)

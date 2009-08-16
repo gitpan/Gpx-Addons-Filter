@@ -12,6 +12,7 @@ WriteMakefile
                            'Test::More' => 0,
                            'Data::Dumper' => 0,
                            'Test::Output' => 0,
+                           'Sub::Identify' => 0,
                            'Geo::Gpx' => '0.13',
                            'Carp' => 0
                          }
