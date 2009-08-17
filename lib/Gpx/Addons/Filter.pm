@@ -1,5 +1,6 @@
 package Gpx::Addons::Filter;
-use 5.010_000; use 5.10.0; # perl 5.10, revision 5 version 10 subversion 0
+#use 5.010_000; use 5.10.0; # perl 5.10, revision 5 version 10 subversion 0
+use 5.008_000; use 5.8.0; 
 use warnings;
 use strict;
 use Carp;
@@ -20,7 +21,7 @@ Version 0.03
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =pod
 
